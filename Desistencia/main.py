@@ -1,3 +1,6 @@
+import logging
+
+import numpy as np
 from consulta_tjsp import get_foro_and_comarca
 from word import tratamento_word,substituir_marcador_paragrafo,Pt
 
@@ -12,6 +15,9 @@ from teste import LoginTJ
 EXCEL_BASE_DESISTENCIAS = "DESISTENCIAS.xlsx"
 PATH_INPUT_EXCEL_DESISTENCIAS = fr"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\BASE\{EXCEL_BASE_DESISTENCIAS}"
 PATH_OUTPUT_DESISTENCIAS = r"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\DESISTENCIA"
+
+
+MAX_REQUISICOES_SIMULTANEAS = 10
 
 class GeneratePetAddress:
     
@@ -55,34 +61,28 @@ class GeneratePetAddress:
         # Salve o novo documento
         documento.save(fr"{PATH_OUTPUT_DESISTENCIAS}\{name_doc}")
      
-    
-    
-    def generate(self,lista:list,session):
-        df = pd.DataFrame(lista)
-        
-        
+     
+    def generate(self, df:pd.DataFrame, session):
+
         for index, row in df.iterrows():
-       
+
             try:
           
-                name = str(row["NOME"]).strip()
-                print(index)
-                print(name)
+                nome = str(row["NOME"]).strip()
                 process_number = str(row["PROCESSO"]).strip()
-                
+                logging.info(f'Processo: {process_number}, Nome: {nome}')
                 
                 self.rescue_district(session,process_number)
-                self.create_doc_word(process_number,name)
-            except:
-                with open("teste.txt","a+") as f:
-                    f.write(process_number+"\n")
-            
-            
+                self.create_doc_word(process_number,nome)
+            except Exception as e:
+                logging.error(f"Falha ao processar o processo {process_number}: {e}")
+
+
 def separar_lista(lista: list, quantidade: int):
     new_list = []
     for index in range(0, len(lista), quantidade):
         new_list.append(lista[index:index+quantidade])
-    return new_list  
+    return new_list
 
 
 def tjsp_autenticar(login=None, password=None):
@@ -90,26 +90,31 @@ def tjsp_autenticar(login=None, password=None):
     return session  
             
 def start():
-    
-    data_queue = queue.Queue() 
-    requisicoes_simultaneas = int(input('Quantas requisições simultaneas deseja fazer? '))
     df = pd.read_excel(PATH_INPUT_EXCEL_DESISTENCIAS, dtype=str)
+    qtd_linhas = len(df)
     
-    numero_raw = len(df) / requisicoes_simultaneas  # < Número que deve ser trocado para divisão <
-    lista_separada = separar_lista(df, int(numero_raw))
+    if qtd_linhas == 0:
+        logging.warning("Nenhuma linha encontrada no arquivo Excel. Nada a fazer.")
+        return
+
+    requisicoes_simultaneas = min(MAX_REQUISICOES_SIMULTANEAS, qtd_linhas)
+    logging.info(f"Total de linhas carregadas: {qtd_linhas}")
+    logging.info(f"Total de requisições simultâneas: {requisicoes_simultaneas}")
+    lista_de_dataframes = np.array_split(df, requisicoes_simultaneas)
+    
     inicio = datetime.now()
-    
     session = tjsp_autenticar("", "")
     
     threads = []
-    for index, lista in enumerate(lista_separada):
-        sleep(2)
-        t = threading.Thread(
-            target=GeneratePetAddress().generate,
-            kwargs={"lista": lista, "session": session}
-        )
-        threads.append(t)
-        t.start()
+    for df_lote in lista_de_dataframes:
+        if not df_lote.empty:
+            sleep(2)
+            t = threading.Thread(
+                target=GeneratePetAddress().generate,
+                kwargs={"lista": df_lote, "session": session}
+            )
+            threads.append(t)
+            t.start()
 
     for t in threads:
         t.join()
