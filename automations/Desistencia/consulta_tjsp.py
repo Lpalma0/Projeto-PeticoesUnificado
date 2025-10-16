@@ -26,19 +26,19 @@ def tjsp_pegar_processo_url(processo_id):
         
         if  str(url) == str(request_url):
 
-            contador_vezes = 1
+            contador_vezes = 0
 
-            while True:
-                    
-                time.sleep(contador_vezes)
+            MAX_TENTATIVAS = 10
+            for tentativa in range(MAX_TENTATIVAS + 1):
+                time.sleep(tentativa)
                 url = requests.get(request_url).url
-                contador_vezes += 1
-                print("Nova tentativa +1")
+                logging.info(f"Processo: {processo_id} - Tentando novamente ({tentativa + 1}X)")
 
                 if url != request_url:
                     break
                 
-                if contador_vezes == 11:
+                if tentativa < MAX_TENTATIVAS:
+                    logging.warning(f"Processo: {processo_id} - Tentativas excedidas ({tentativa + 1}X)")
                     break
 
         

@@ -93,7 +93,6 @@ class GeneratePetAddress:
                 if not self.rescue_district(session, process_number):
                     logging.warning(f"Não foi possível resgatar a comarca para o processo {process_number}")
                     continue
-                print(self.rescue_district(session, process_number))
 
                 self.create_doc_word(process_number, nome)
             
