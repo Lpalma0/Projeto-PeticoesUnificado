@@ -12,9 +12,13 @@ from datetime import datetime
 from time import sleep
 from teste import LoginTJ
 
+from ..configs import config
+
 EXCEL_BASE_DESISTENCIAS = "DESISTENCIAS.xlsx"
 PATH_INPUT_EXCEL_DESISTENCIAS = fr"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\BASE\{EXCEL_BASE_DESISTENCIAS}"
 PATH_OUTPUT_DESISTENCIAS = r"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\DESISTENCIA"
+
+PATH_MODELO_DESISTENCIAS = r"DESISTÊNCIA COM BLOQUEIO (MODELO).docx"
 
 
 MAX_REQUISICOES_SIMULTANEAS = 10
@@ -48,7 +52,8 @@ class GeneratePetAddress:
             "NOME" : name,
         }
          
-        documento = Document(r"DESISTÊNCIA COM BLOQUEIO (MODELO).docx")
+        
+        documento = Document(PATH_MODELO_DESISTENCIAS)
 
         for paragrafo in documento.paragraphs:
             for marcador, substituto in vars_text.items():
@@ -64,16 +69,16 @@ class GeneratePetAddress:
      
     def generate(self, df:pd.DataFrame, session):
 
-        for index, row in df.iterrows():
+        for idx, row in df.iterrows():
 
             try:
           
                 nome = str(row["NOME"]).strip()
                 process_number = str(row["PROCESSO"]).strip()
-                logging.info(f'Processo: {process_number}, Nome: {nome}')
+                logging.info(f'Processando linha: {idx}- Processo: {process_number} - Nome: {nome}')
+                self.rescue_district(session, process_number)
+                self.create_doc_word(process_number, nome)
                 
-                self.rescue_district(session,process_number)
-                self.create_doc_word(process_number,nome)
             except Exception as e:
                 logging.error(f"Falha ao processar o processo {process_number}: {e}")
 
@@ -98,9 +103,9 @@ def start():
         return
 
     requisicoes_simultaneas = min(MAX_REQUISICOES_SIMULTANEAS, qtd_linhas)
+    lista_de_dataframes = np.array_split(df, requisicoes_simultaneas)
     logging.info(f"Total de linhas carregadas: {qtd_linhas}")
     logging.info(f"Total de requisições simultâneas: {requisicoes_simultaneas}")
-    lista_de_dataframes = np.array_split(df, requisicoes_simultaneas)
     
     inicio = datetime.now()
     session = tjsp_autenticar("", "")

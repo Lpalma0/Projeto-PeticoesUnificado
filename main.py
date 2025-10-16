@@ -10,7 +10,7 @@ if escolha == "Endereço":
     start()
     
 elif escolha == "Desistencia":
-    from Desistencia.main import start
+    from Desistencia.desistencia_automation import start
     start()
     
 elif escolha == "Sentença":
