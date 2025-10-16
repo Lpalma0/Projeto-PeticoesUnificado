@@ -16,7 +16,7 @@ def substituir_marcador_paragrafo(paragrafo, marcador, substituto):
     return False
 
 
-def tratamento_word(num_vara,foro,classe):
+def tratamento_word(num_vara, foro, classe):
     if 'Regional' in foro:
         
         try:

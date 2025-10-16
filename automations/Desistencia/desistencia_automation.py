@@ -1,24 +1,21 @@
 import logging
-
 import numpy as np
-from consulta_tjsp import get_foro_and_comarca
-from word import tratamento_word,substituir_marcador_paragrafo,Pt
-
 from docx import Document
 import pandas as pd
-import queue
 import threading
 from datetime import datetime
 from time import sleep
-from teste import LoginTJ
 
-from ..configs import config
+from .teste import LoginTJ
+from .consulta_tjsp import get_foro_and_comarca
+from .word import tratamento_word,substituir_marcador_paragrafo,Pt
 
-EXCEL_BASE_DESISTENCIAS = "DESISTENCIAS.xlsx"
-PATH_INPUT_EXCEL_DESISTENCIAS = fr"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\BASE\{EXCEL_BASE_DESISTENCIAS}"
-PATH_OUTPUT_DESISTENCIAS = r"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\DESISTENCIA"
+from configs.config import Config
 
-PATH_MODELO_DESISTENCIAS = r"DESISTÊNCIA COM BLOQUEIO (MODELO).docx"
+NOME_EXCEL_BASE_DESISTENCIAS = Config.NOME_EXCEL_BASE_DESISTENCIAS
+PATH_INPUT_EXCEL_DESISTENCIAS = Config.PATH_INPUT_EXCEL_DESISTENCIAS
+PATH_OUTPUT_DESISTENCIAS = Config.PATH_OUTPUT_DESISTENCIAS
+PATH_TEMPLATE_DESISTENCIAS = Config.PATH_TEMPLATE_DESISTENCIAS
 
 
 MAX_REQUISICOES_SIMULTANEAS = 10
@@ -27,11 +24,27 @@ class GeneratePetAddress:
     
     def __init__(self):
         pass
-    
-    def rescue_district(self,session,process_number:str,login:str="124.774.618-69",password:str="Grp@Icr2024"):
-        self.foro,self.num_vara,self.num_processo,self.classe,self.reqte = get_foro_and_comarca(login,password,process_number,session)
-    
-    def create_doc_word(self, process_number:str, name:str):
+
+    def rescue_district(
+        self,
+        session,
+        process_number: str,
+        login: str = "124.774.618-69",
+        password: str = "Grp@Icr2024"
+    ) -> bool:
+        """
+        Resgata informações da comarca do processo.
+        Returns:
+            bool: Retorna True se achar todas as informações. Caso contrário, False.
+        """
+        
+        self.foro, self.num_vara, self.num_processo, self.classe, self.reqte = get_foro_and_comarca(login, password, process_number, session)
+
+        if all([self.foro, self.num_vara, self.num_processo, self.classe, self.reqte]):
+            return True
+        return False
+
+    def create_doc_word(self, process_number: str, name: str):
         text_foro = tratamento_word(
             self.num_vara,
             self.foro,
@@ -53,7 +66,7 @@ class GeneratePetAddress:
         }
          
         
-        documento = Document(PATH_MODELO_DESISTENCIAS)
+        documento = Document(PATH_TEMPLATE_DESISTENCIAS)
 
         for paragrafo in documento.paragraphs:
             for marcador, substituto in vars_text.items():
@@ -76,9 +89,14 @@ class GeneratePetAddress:
                 nome = str(row["NOME"]).strip()
                 process_number = str(row["PROCESSO"]).strip()
                 logging.info(f'Processando linha: {idx}- Processo: {process_number} - Nome: {nome}')
-                self.rescue_district(session, process_number)
+
+                if not self.rescue_district(session, process_number):
+                    logging.warning(f"Não foi possível resgatar a comarca para o processo {process_number}")
+                    continue
+                print(self.rescue_district(session, process_number))
+
                 self.create_doc_word(process_number, nome)
-                
+            
             except Exception as e:
                 logging.error(f"Falha ao processar o processo {process_number}: {e}")
 
@@ -116,7 +134,7 @@ def start():
             sleep(2)
             t = threading.Thread(
                 target=GeneratePetAddress().generate,
-                kwargs={"lista": df_lote, "session": session}
+                kwargs={"df": df_lote, "session": session}
             )
             threads.append(t)
             t.start()

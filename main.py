@@ -3,16 +3,16 @@ import questionary
 choices = ["Endereço", "Desistencia", "Sentença"]
 
 print("Gerar petições de: ")
-escolha = questionary.select("Select an option:", choices=choices).ask()
+escolha = questionary.select("Escolha uma opção:", choices=choices).ask()
 
 if escolha == "Endereço":
-    from Endereco.main import start
+    #from Endereco.main import start
     start()
     
 elif escolha == "Desistencia":
-    from Desistencia.desistencia_automation import start
+    from automations.desistencia.desistencia_automation import start
     start()
     
 elif escolha == "Sentença":
-    from Sentenca.main import start
+    #from Sentenca.main import start
     start()
