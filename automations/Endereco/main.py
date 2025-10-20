@@ -100,7 +100,7 @@ def start():
     numero_raw = len(df)  / requisicoes_simultaneas # < Número que deve ser trocado para divisão < 
     lista_separada = separar_lista(df,int(numero_raw))
     
-    lista_de
+
     
     inicio = datetime.now()
     

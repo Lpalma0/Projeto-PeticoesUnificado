@@ -3,12 +3,16 @@ import numpy as np
 from docx import Document
 import pandas as pd
 import threading
+import os
+from dotenv import load_dotenv; load_dotenv()
 from datetime import datetime
 from time import sleep
 
 from .teste import LoginTJ
 from .consulta_tjsp import get_foro_and_comarca
 from .word import tratamento_word,substituir_marcador_paragrafo,Pt
+
+from utils.data_processing import split_dataframe_into_chunks
 
 from configs.config import Config
 
@@ -18,9 +22,7 @@ PATH_OUTPUT_DESISTENCIAS = Config.PATH_OUTPUT_DESISTENCIAS
 PATH_TEMPLATE_DESISTENCIAS = Config.PATH_TEMPLATE_DESISTENCIAS
 
 
-MAX_REQUISICOES_SIMULTANEAS = 10
-
-class GeneratePetAddress:
+class GeneratePetDesistencia:
     
     def __init__(self):
         pass
@@ -64,7 +66,7 @@ class GeneratePetAddress:
             "CLASSE1" :self.classe.upper(),
             "NOME" : name,
         }
-         
+        
         
         documento = Document(PATH_TEMPLATE_DESISTENCIAS)
 
@@ -109,21 +111,13 @@ def separar_lista(lista: list, quantidade: int):
 
 def tjsp_autenticar(login=None, password=None):
     session = LoginTJ().login()
-    return session  
-            
+    return session
+
+
 def start():
     df = pd.read_excel(PATH_INPUT_EXCEL_DESISTENCIAS, dtype=str)
-    qtd_linhas = len(df)
-    
-    if qtd_linhas == 0:
-        logging.warning("Nenhuma linha encontrada no arquivo Excel. Nada a fazer.")
-        return
+    lista_de_dataframes = split_dataframe_into_chunks(df)
 
-    requisicoes_simultaneas = min(MAX_REQUISICOES_SIMULTANEAS, qtd_linhas)
-    lista_de_dataframes = np.array_split(df, requisicoes_simultaneas)
-    logging.info(f"Total de linhas carregadas: {qtd_linhas}")
-    logging.info(f"Total de requisições simultâneas: {requisicoes_simultaneas}")
-    
     inicio = datetime.now()
     session = tjsp_autenticar("", "")
     
@@ -132,7 +126,7 @@ def start():
         if not df_lote.empty:
             sleep(2)
             t = threading.Thread(
-                target=GeneratePetAddress().generate,
+                target=GeneratePetDesistencia().generate,
                 kwargs={"df": df_lote, "session": session}
             )
             threads.append(t)
