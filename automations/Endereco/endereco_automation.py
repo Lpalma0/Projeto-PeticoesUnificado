@@ -1,6 +1,3 @@
-from consulta_tjsp import get_foro_and_comarca
-from word import tratamento_word,substituir_marcador_paragrafo,Pt
-
 from docx import Document
 import pandas as pd
 import queue
@@ -8,6 +5,12 @@ import threading
 from datetime import datetime
 from time import sleep
 from teste import LoginTJ
+
+from consulta_tjsp import get_foro_and_comarca
+from word import tratamento_word,substituir_marcador_paragrafo,Pt
+
+from utils.data_processing import split_dataframe_into_chunks
+
 
 class GeneratePetAddress:
     
@@ -55,10 +58,8 @@ class GeneratePetAddress:
      
     
     
-    def generate(self,lista:list,session):
-        df = pd.DataFrame(lista)
-        
-        
+    def generate(self, df:pd.DataFrame, session):
+
         for index, row in df.iterrows():
        
             try:
@@ -85,33 +86,27 @@ def separar_lista(lista: list, quantidade: int):
 
 def tjsp_autenticar(login=None, password=None):
     session = LoginTJ().login()
-    return session  
+    return session 
             
 def start():
-    
-    data_queue = queue.Queue() 
-    requisicoes_simultaneas = int(input('Quantas requisições simultaneas deseja fazer?'))  
-    
-    # Caminho antigo
-    #df = pd.read_excel(r"\\192.168.1.54\desenvolvimentojuridico$\Petição outro endereço\Planilha endereços.xlsx", dtype=str)
-    
     df = pd.read_excel(r"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\BASE\Planilha endereços.xlsx", dtype=str)
-    
-    numero_raw = len(df)  / requisicoes_simultaneas # < Número que deve ser trocado para divisão < 
-    lista_separada = separar_lista(df,int(numero_raw))
-    
 
+    lista_de_dataframes = split_dataframe_into_chunks(df)
     
     inicio = datetime.now()
     
     session = tjsp_autenticar("", "")
     
     threads = []
-    for index, lista in enumerate(lista_separada):
-        sleep(2)
-        t = threading.Thread(target=GeneratePetAddress().generate,kwargs={"lista" :lista,"session":session})
-        threads.append(t)
-        t.start()
+    for idx, df_lote in enumerate(lista_de_dataframes):
+        if not df_lote.empty:
+            sleep(2)
+            t = threading.Thread(
+                target=GeneratePetAddress().generate,
+                kwargs={"df" : df_lote, "session" : session}
+            )
+            threads.append(t)
+            t.start()
 
     for t in threads:
         t.join()
