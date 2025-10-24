@@ -1,16 +1,22 @@
 import logging
+import os
 import queue
 import threading
 from datetime import datetime
 from decimal import Decimal
 from time import sleep
+
 import pandas as pd
 from docx import Document
 
-from .word import Pt, substituir_marcador_paragrafo, tratamento_word
-
 from utils.consulta_tjsp import get_foro_and_comarca
 from utils.login_tjsp import LoginTJ
+
+from .word import Pt, substituir_marcador_paragrafo, tratamento_word
+
+from dotenv import load_dotenv; load_dotenv() 
+
+
 
 INPUT_EXCEL = "CUMPRIMENTO DE SENTENÇA.xlsx"
 PATH_INPUT_EXCEL = f"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\BASE\{INPUT_EXCEL}"
@@ -47,8 +53,8 @@ class GeneratePetSentenca:
             "VALOR_EXCEL":valor
 
         }
-         
-        documento = Document(r"modelo\modelo.docx")
+        
+        documento = Document() #TODO
 
         for paragrafo in documento.paragraphs:
             for marcador, substituto in vars_text.items():

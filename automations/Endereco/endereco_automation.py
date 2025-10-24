@@ -1,49 +1,64 @@
 import logging
+import os
 import queue
 import threading
 from datetime import datetime
 from time import sleep
-from docx import Document
-import pandas as pd
 
-from .word import Pt, substituir_marcador_paragrafo, tratamento_word
+import pandas as pd
+from docx import Document
 
 from utils.consulta_tjsp import get_foro_and_comarca
 from utils.data_processing import split_dataframe_into_chunks
 from utils.login_tjsp import LoginTJ
 
+from .word import Pt, substituir_marcador_paragrafo, tratamento_word
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+PATH_TEMPLATE_ENDERECO = load_dotenv("PATH_TEMPLATE_ENDERECO")
+PATH_OUTPUT_ENDERECOS  = load_dotenv("PATH_OUTPUT_ENDERECOS")
+PATH_INPUT_EXCEL_ENDERECOS = load_dotenv("PATH_INPUT_EXCEL_ENDERECOS")
+
+
 class GeneratePetAddress:
-    
+
     def __init__(self):
         pass
-    
-    def rescue_district(self,session,process_number:str, login:str="124.774.618-69",password:str="Grp@Icr2024"):
-        self.foro,self.num_vara,self.num_processo,self.classe,self.reqte = get_foro_and_comarca(login,password,process_number,session)
-        
-    
-    def create_doc_word(self,process_number:str,name:str,address:str):
-        text_foro = tratamento_word(
-            self.num_vara,
-            self.foro,
-            self.classe
+
+    def rescue_district(
+        self,
+        session,
+        process_number: str,
+        login: str = "124.774.618-69",
+        password: str = "Grp@Icr2024",
+    ):
+        self.foro, self.num_vara, self.num_processo, self.classe, self.reqte = (
+            get_foro_and_comarca(login, password, process_number, session)
         )
-        if self.classe == 'Execução de Sentença':
-            classe1 = 'Execução de Sentença'
-            self.classe = 'BUSCA E APREENSÃO EM ALIENAÇÃO FIDUCIÁRIA'
-          
+
+    def create_doc_word(self, process_number: str, name: str, address: str):
+        text_foro = tratamento_word(self.num_vara, self.foro, self.classe)
+
+        if self.classe == "Execução de Sentença":
+            classe1 = "Execução de Sentença"
+            self.classe = "BUSCA E APREENSÃO EM ALIENAÇÃO FIDUCIÁRIA"
         else:
-            self.classe = 'AÇÃO DE BUSCA E APREENSÃO EM ALIENAÇÃO FIDUCIÁRIA'
-            
+            self.classe = "AÇÃO DE BUSCA E APREENSÃO EM ALIENAÇÃO FIDUCIÁRIA"
+
         vars_text = {
-            "REQTE":self.reqte,
+            "REQTE": self.reqte,
             "TEXT_FORO": text_foro.upper(),
             "NUM_PROCESSO": process_number,
-            "CLASSE1" :self.classe.upper(),
-            "NOME" : name,
-            "ENDERECO_EXCEL" : address+"."
+            "CLASSE1": self.classe.upper(),
+            "NOME": name,
+            "ENDERECO_EXCEL": f"{address}.",
         }
-         
-        documento = Document(r"Modelo2.docx")
+
+        documento = Document(PATH_TEMPLATE_ENDERECO)
 
         for paragrafo in documento.paragraphs:
             for marcador, substituto in vars_text.items():
@@ -52,59 +67,62 @@ class GeneratePetAddress:
                 for run in paragrafo.runs:
                     run.font.size = Pt(11)
 
-        name_doc = f'{name} - {process_number}.docx'
+        name_doc = f"{name} - {process_number}.docx"
         # Salve o novo documento
-        documento.save(fr"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\ENDERECO\{name_doc}")
-     
-    
-    
-    def generate(self, df:pd.DataFrame, session):
+        documento.save(
+            fr"{PATH_OUTPUT_ENDERECOS}\{name_doc}"
+        )
+
+    def generate(self, df: pd.DataFrame, session):
 
         for index, row in df.iterrows():
-       
+
             try:
-          
+
                 name = str(row["NOME/BANCO"]).strip()
                 print(index)
                 print(name)
                 process_number = str(row["PROCESSO"]).strip()
                 address = str(row["ENDEREÇO/LOCALIZAÇÃO"]).strip()
-                
+
                 self.rescue_district(session, process_number)
                 self.create_doc_word(process_number, name, address)
-                
-                
+
             except Exception as e:
                 logging.error(f"Erro ao gerar petição de endereço: {e}")
-            
-            
+
+
 def separar_lista(lista: list, quantidade: int):
     new_list = []
     for index in range(0, len(lista), quantidade):
-        new_list.append(lista[index:index+quantidade])
-    return new_list  
+        new_list.append(lista[index : index + quantidade])
+    return new_list
 
 
 def tjsp_autenticar(login=None, password=None):
     session = LoginTJ().login()
-    return session 
-            
+    return session
+
+
 def start():
-    df = pd.read_excel(r"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\BASE\Planilha endereços.xlsx", dtype=str)
+    df = pd.read_excel(
+        PATH_INPUT_EXCEL_ENDERECOS,
+        dtype=str,
+    )
 
     lista_de_dataframes = split_dataframe_into_chunks(df)
-    
+
     inicio = datetime.now()
-    
+
     session = tjsp_autenticar("", "")
-    
+
     threads = []
-    for idx, df_lote in enumerate(lista_de_dataframes):
+    for _, df_lote in enumerate(lista_de_dataframes):
         if not df_lote.empty:
             sleep(2)
             t = threading.Thread(
                 target=GeneratePetAddress().generate,
-                kwargs={"df" : df_lote, "session" : session}
+                kwargs={"df": df_lote, "session": session},
             )
             threads.append(t)
             t.start()
@@ -117,6 +135,6 @@ def start():
     tempo = fim - inicio
 
     print(tempo)
-    
-start()
 
+
+start()
