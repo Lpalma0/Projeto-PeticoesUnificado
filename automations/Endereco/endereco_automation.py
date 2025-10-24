@@ -1,6 +1,4 @@
 import logging
-import os
-import queue
 import threading
 from datetime import datetime
 from time import sleep
@@ -8,20 +6,16 @@ from time import sleep
 import pandas as pd
 from docx import Document
 
+from configs.config import Config
 from utils.consulta_tjsp import get_foro_and_comarca
 from utils.data_processing import split_dataframe_into_chunks
 from utils.login_tjsp import LoginTJ
 
 from .word import Pt, substituir_marcador_paragrafo, tratamento_word
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
-
-PATH_TEMPLATE_ENDERECO = load_dotenv("PATH_TEMPLATE_ENDERECO")
-PATH_OUTPUT_ENDERECOS  = load_dotenv("PATH_OUTPUT_ENDERECOS")
-PATH_INPUT_EXCEL_ENDERECOS = load_dotenv("PATH_INPUT_EXCEL_ENDERECOS")
+PATH_TEMPLATE_ENDERECO = Config.PATH_TEMPLATE_ENDERECO
+PATH_OUTPUT_ENDERECOS = Config.PATH_OUTPUT_ENDERECOS
+PATH_INPUT_EXCEL_ENDERECOS = Config.PATH_INPUT_EXCEL_ENDERECOS
 
 
 class GeneratePetAddress:
@@ -69,9 +63,7 @@ class GeneratePetAddress:
 
         name_doc = f"{name} - {process_number}.docx"
         # Salve o novo documento
-        documento.save(
-            fr"{PATH_OUTPUT_ENDERECOS}\{name_doc}"
-        )
+        documento.save(rf"{PATH_OUTPUT_ENDERECOS}\{name_doc}")
 
     def generate(self, df: pd.DataFrame, session):
 

@@ -24,7 +24,4 @@ class Config:
     PATH_OUTPUT_DESISTENCIAS      = r"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\DESISTENCIA"
     
     
-    # region Sentenças
     
-    
-    PATH_OUTPUT_SENTENCA = r"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\SENTENCA"
