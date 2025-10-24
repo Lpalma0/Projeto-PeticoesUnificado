@@ -1,20 +1,24 @@
 import logging
-import numpy as np
-from docx import Document
-import pandas as pd
-import threading
 import os
-from dotenv import load_dotenv; load_dotenv()
+import threading
 from datetime import datetime
 from time import sleep
 
-from .teste import LoginTJ
-from .consulta_tjsp import get_foro_and_comarca
-from .word import tratamento_word,substituir_marcador_paragrafo,Pt
-
-from utils.data_processing import split_dataframe_into_chunks
+import numpy as np
+import pandas as pd
+from docx import Document
 
 from configs.config import Config
+from utils.data_processing import split_dataframe_into_chunks
+
+from .consulta_tjsp import get_foro_and_comarca
+from .teste import LoginTJ
+from .word import Pt, substituir_marcador_paragrafo, tratamento_word
+
+from dotenv import load_dotenv; load_dotenv()
+
+
+
 
 NOME_EXCEL_BASE_DESISTENCIAS = Config.NOME_EXCEL_BASE_DESISTENCIAS
 PATH_INPUT_EXCEL_DESISTENCIAS = Config.PATH_INPUT_EXCEL_DESISTENCIAS

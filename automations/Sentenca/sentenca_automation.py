@@ -1,14 +1,16 @@
-from consulta_tjsp import get_foro_and_comarca
-from word import tratamento_word,substituir_marcador_paragrafo,Pt
-
-from docx import Document
-import pandas as pd
+import logging
 import queue
 import threading
 from datetime import datetime
-from time import sleep
 from decimal import Decimal
-from teste import LoginTJ
+from time import sleep
+import pandas as pd
+from docx import Document
+
+from .word import Pt, substituir_marcador_paragrafo, tratamento_word
+
+from utils.consulta_tjsp import get_foro_and_comarca
+from utils.login_tjsp import LoginTJ
 
 INPUT_EXCEL = "CUMPRIMENTO DE SENTENÇA.xlsx"
 PATH_INPUT_EXCEL = f"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\BASE\{INPUT_EXCEL}"
@@ -79,12 +81,12 @@ class GeneratePetSentenca:
                 value = str(value).replace("R$","").strip()
                 contract = str(row["CONTRATO"]).strip()
                 
-                self.rescue_district(session,process_number)
-                self.create_doc_word(process_number,name,value)
+                self.rescue_district(session, process_number)
+                self.create_doc_word(process_number, name, value)
+                
+                
             except Exception as e:
-                print(e)
-                with open("teste.txt","a+") as f:
-                    f.write(process_number+"\n")
+                logging.error(f"Erro ao gerar petição de senteça: {e}")
             
             
 def separar_lista(lista: list, quantidade: int):

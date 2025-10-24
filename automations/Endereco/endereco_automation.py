@@ -1,23 +1,23 @@
-from docx import Document
-import pandas as pd
+import logging
 import queue
 import threading
 from datetime import datetime
 from time import sleep
-from teste import LoginTJ
+from docx import Document
+import pandas as pd
 
-from consulta_tjsp import get_foro_and_comarca
-from word import tratamento_word,substituir_marcador_paragrafo,Pt
+from .word import Pt, substituir_marcador_paragrafo, tratamento_word
 
+from utils.consulta_tjsp import get_foro_and_comarca
 from utils.data_processing import split_dataframe_into_chunks
-
+from utils.login_tjsp import LoginTJ
 
 class GeneratePetAddress:
     
     def __init__(self):
         pass
     
-    def rescue_district(self,session,process_number:str,login:str="124.774.618-69",password:str="Grp@Icr2024"):
+    def rescue_district(self,session,process_number:str, login:str="124.774.618-69",password:str="Grp@Icr2024"):
         self.foro,self.num_vara,self.num_processo,self.classe,self.reqte = get_foro_and_comarca(login,password,process_number,session)
         
     
@@ -70,11 +70,12 @@ class GeneratePetAddress:
                 process_number = str(row["PROCESSO"]).strip()
                 address = str(row["ENDEREÇO/LOCALIZAÇÃO"]).strip()
                 
-                self.rescue_district(session,process_number)
-                self.create_doc_word(process_number,name,address)
-            except:
-                with open("teste.txt","a+") as f:
-                    f.write(process_number+"\n")
+                self.rescue_district(session, process_number)
+                self.create_doc_word(process_number, name, address)
+                
+                
+            except Exception as e:
+                logging.error(f"Erro ao gerar petição de endereço: {e}")
             
             
 def separar_lista(lista: list, quantidade: int):

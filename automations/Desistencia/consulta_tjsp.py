@@ -1,12 +1,11 @@
 import logging
-from bs4 import BeautifulSoup
-import requests
 import re
 import time
 import urllib.parse
 
+import requests
+from bs4 import BeautifulSoup
 
-     
 
 def tjsp_pegar_processo_url(processo_id):
    
