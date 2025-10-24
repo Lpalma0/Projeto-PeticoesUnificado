@@ -18,7 +18,7 @@ print("Gerar petições de: ")
 escolha = questionary.select("Escolha uma opção: ", choices=choices).ask()
 
 if escolha == "Endereço":
-    from automations.Endereco.endereco_automation import start as endereco_start
+    from automations.endereco.endereco_automation import start as endereco_start
     endereco_start()
     
 elif escolha == "Desistencia":
@@ -26,5 +26,5 @@ elif escolha == "Desistencia":
     desistencia_start()
     
 elif escolha == "Sentença":
-    from automations.Sentenca.sentenca_automation import start as sentenca_start
+    from automations.sentenca.sentenca_automation import start as sentenca_start
     sentenca_start()

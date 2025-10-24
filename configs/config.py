@@ -21,7 +21,14 @@ class Config:
     
     PATH_TEMPLATE_DESISTENCIAS    = CWD / "automations" / "desistencia" / "templates" / NOME_TEMPLATE_DESISTENCIAS
     PATH_INPUT_EXCEL_DESISTENCIAS = fr"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\BASE\{NOME_EXCEL_BASE_DESISTENCIAS}"
-    PATH_OUTPUT_DESISTENCIAS      = r"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\DESISTENCIA"
+    PATH_OUTPUT_DESISTENCIAS      = fr"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\DESISTENCIA"
     
     
     
+    # region Sentença
+    NOME_TEMPLATE_SENTENCA   = "PETICAO_SENTENCA_TEMPLATE.docx"
+    NOME_EXCEL_BASE_SENTENCA = "CUMPRIMENTO DE SENTENÇA.xlsx"
+    
+    PATH_TEMPLATE_SENTENCA    = CWD / "automations" / "sentenca" / "templates" / NOME_TEMPLATE_SENTENCA
+    PATH_INPUT_EXCEL_SENTENCA = fr"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\BASE\{NOME_EXCEL_BASE_SENTENCA}"
+    PATH_OUTPUT_SENTENCA      = fr"\\192.168.1.54\desenvolvimentojuridico$\PETICOES\SENTENCA"
